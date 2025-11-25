@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class FarmProfile(models.Model):
     FARM_TYPES = [
@@ -10,7 +10,11 @@ class FarmProfile(models.Model):
         ('greenhouse', 'Greenhouse'),
     ]
     
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farms')
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Utilise AUTH_USER_MODEL au lieu de User
+        on_delete=models.CASCADE, 
+        related_name='farms'
+    )
     name = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     size = models.DecimalField(max_digits=10, decimal_places=2, help_text="Size in hectares")

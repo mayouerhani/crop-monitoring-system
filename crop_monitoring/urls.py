@@ -19,6 +19,10 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    #pour faire la liaison entre /api/urls.py et /crop_monitorin/urls.py
+    
+    # URLs d'authentification - AJOUTE CETTE LIGNE
+    path('api/auth/', include('authentication.urls')),
+    
+    # URLs de l'API existante
     path('api/', include('api.urls', namespace='api')),  
 ]
