@@ -25,4 +25,5 @@ urlpatterns = [
     
     # URLs de l'API existante
     path('api/', include('api.urls', namespace='api')),  
+    path('api/', include('monitoring.urls')),
 ]
