@@ -40,3 +40,55 @@ class HarvestRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = HarvestRecord
         fields = '__all__'
+from rest_framework import serializers
+from monitoring.models import Plot, SensorReading, Alert, AlertHistory
+
+
+class PlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plot
+        fields = ['id', 'name', 'description', 'location', 'crop_type', 'size', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class SensorReadingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SensorReading
+        fields = ['id', 'plot', 'sensor_type', 'value', 'unit', 'timestamp']
+        read_only_fields = ['timestamp']
+
+
+class AlertHistorySerializer(serializers.ModelSerializer):
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = AlertHistory
+        fields = ['id', 'action', 'user_email', 'notes', 'timestamp']
+        read_only_fields = ['timestamp']
+
+
+class AlertDetailSerializer(serializers.ModelSerializer):
+    plot_name = serializers.CharField(source='plot.name', read_only=True)
+    history = AlertHistorySerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Alert
+        fields = [
+            'id', 'plot', 'plot_name', 'alert_type', 'severity', 'message',
+            'current_value', 'threshold_value', 'recommendations', 
+            'is_resolved', 'resolved_at', 'timestamp', 'history'
+        ]
+        read_only_fields = ['timestamp', 'resolved_at']
+
+
+class AlertSerializer(serializers.ModelSerializer):
+    plot_name = serializers.CharField(source='plot.name', read_only=True)
+    
+    class Meta:
+        model = Alert
+        fields = [
+            'id', 'plot', 'plot_name', 'alert_type', 'severity', 'message',
+            'current_value', 'threshold_value', 'recommendations',
+            'is_resolved', 'timestamp'
+        ]
+        read_only_fields = ['timestamp']

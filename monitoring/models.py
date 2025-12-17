@@ -263,3 +263,110 @@ class HarvestRecord(models.Model):
         ]
         verbose_name = 'Harvest Record'
         verbose_name_plural = 'Harvest Records'
+from django.db import models
+from django.contrib.auth.models import User
+
+# Keep existing Plot model if it exists, if not add:
+class Plot(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('archived', 'Archived'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='plots')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    location = models.CharField(max_length=255)
+    crop_type = models.CharField(max_length=100)
+    size = models.FloatField(help_text="Size in hectares")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} ({self.crop_type})"
+
+
+class SensorReading(models.Model):
+    SENSOR_TYPES = [
+        ('temperature', 'Temperature (°C)'),
+        ('humidity', 'Humidity (%)'),
+        ('soil_moisture', 'Soil Moisture (%)'),
+        ('ph_level', 'pH Level'),
+        ('light_intensity', 'Light Intensity (lux)'),
+    ]
+    
+    plot = models.ForeignKey(Plot, on_delete=models.CASCADE, related_name='sensor_readings')
+    sensor_type = models.CharField(max_length=50, choices=SENSOR_TYPES)
+    value = models.FloatField()
+    unit = models.CharField(max_length=20)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['plot', 'sensor_type', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plot.name} - {self.sensor_type}: {self.value}"
+
+
+class Alert(models.Model):
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    ALERT_TYPES = [
+        ('temperature', 'Temperature'),
+        ('humidity', 'Humidity'),
+        ('soil_moisture', 'Soil Moisture'),
+        ('ph_level', 'pH Level'),
+        ('light_intensity', 'Light Intensity'),
+    ]
+    
+    plot = models.ForeignKey(Plot, on_delete=models.CASCADE, related_name='alerts')
+    alert_type = models.CharField(max_length=50, choices=ALERT_TYPES)
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, db_index=True)
+    message = models.TextField()
+    current_value = models.FloatField()
+    threshold_value = models.FloatField()
+    recommendations = models.JSONField(default=list, blank=True)
+    is_resolved = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['plot', '-timestamp']),
+            models.Index(fields=['severity', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plot.name} - {self.alert_type} ({self.severity})"
+
+
+class AlertHistory(models.Model):
+    ACTION_CHOICES = [
+        ('created', 'Created'),
+        ('viewed', 'Viewed'),
+        ('acknowledged', 'Acknowledged'),
+        ('resolved', 'Resolved'),
+    ]
+    
+    alert = models.ForeignKey(Alert, on_delete=models.CASCADE, related_name='history')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    notes = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']

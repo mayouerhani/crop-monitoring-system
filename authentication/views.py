@@ -1,3 +1,8 @@
+
+from django.shortcuts import render
+
+# Create your views here.
+
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -47,3 +52,4 @@ def user_profile(request):
     returns current user info
     """
     return Response(UserSerializer(request.user).data)
+
